@@ -13,6 +13,7 @@ async function startCheckout() {
   try {
     const checkoutSessionResponse = await callServer("/api/sessions?type=" + type);
     const checkout = await createAdyenCheckout(checkoutSessionResponse);
+
     checkout.create(type).mount(document.getElementById("payment"));
 
   } catch (error) {
@@ -33,33 +34,18 @@ async function finalizeCheckout() {
 }
 
 async function createAdyenCheckout(session){
+
   return new AdyenCheckout(
     {
       clientKey,
-      locale: "en_US",
-      environment: "test",
+      environment: "live",
       session: session,
       showPayButton: true,
       paymentMethodsConfiguration: {
-        ideal: {
-          showImage: true,
-        },
         card: {
           hasHolderName: true,
           holderNameRequired: true,
-          name: "Credit or debit card",
-          amount: {
-            value: 10000,  // in minor units
-            currency: "EUR",
-          },
-        },
-        paypal: {
-          amount: {
-            value: 10000, // in minor units
-            currency: "USD",
-          },
-          environment: "test", // Change this to "live" when you're ready to accept live PayPal payments
-          countryCode: "US", // Only needed for test. This will be automatically retrieved when you are in production.
+
         }
       },
       onPaymentCompleted: (result, component) => {

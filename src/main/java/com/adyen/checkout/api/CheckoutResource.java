@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -37,35 +39,31 @@ public class CheckoutResource {
 
         this.applicationProperty = applicationProperty;
 
-        if(applicationProperty.getApiKey() == null) {
+        if (applicationProperty.getApiKey() == null) {
             log.warn("ADYEN_KEY is UNDEFINED");
             throw new RuntimeException("ADYEN_KEY is UNDEFINED");
         }
 
-        var client = new Client(applicationProperty.getApiKey(), Environment.TEST);
+        var client = new Client(applicationProperty.getApiKey(), Environment.LIVE, "1aa91d85f667dbfe-Sothebys");
+
         this.checkout = new Checkout(client);
+
     }
 
     @PostMapping("/sessions")
     public ResponseEntity<CreateCheckoutSessionResponse> sessions(@RequestHeader String host, @RequestParam String type, HttpServletRequest request) throws IOException, ApiException {
         var orderRef = UUID.randomUUID().toString();
         var amount = new Amount()
-            .currency("EUR")
-            .value(10000L); // value is 100€ in minor units
+            .currency("CNY")
+            .value(10L);
 
         var checkoutSession = new CreateCheckoutSessionRequest();
-        checkoutSession.countryCode("NL");
         checkoutSession.merchantAccount(this.applicationProperty.getMerchantAccount());
-        // (optional) set WEB to filter out payment methods available only for this platform
         checkoutSession.setChannel(CreateCheckoutSessionRequest.ChannelEnum.WEB);
-        checkoutSession.setReference(orderRef); // required
+        checkoutSession.setReference(orderRef);
+        checkoutSession.setAllowedPaymentMethods(Arrays.asList("wechatpayQR","scheme","alipay"));
         checkoutSession.setReturnUrl(request.getScheme() + "://" + host + "/redirect?orderRef=" + orderRef);
         checkoutSession.setAmount(amount);
-        // set lineItems required for some payment methods (ie Klarna)
-        checkoutSession.setLineItems(Arrays.asList(
-            new LineItem().quantity(1L).amountIncludingTax(5000L).description("Sunglasses"),
-            new LineItem().quantity(1L).amountIncludingTax(5000L).description("Headphones"))
-        );
 
         log.info("REST request to create Adyen Payment Session {}", checkoutSession);
         var response = checkout.sessions(checkoutSession);
