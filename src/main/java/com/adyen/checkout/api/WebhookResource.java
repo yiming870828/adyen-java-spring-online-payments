@@ -26,39 +26,38 @@ public class WebhookResource {
     public WebhookResource(ApplicationProperty applicationProperty) {
         this.applicationProperty = applicationProperty;
 
-        if(this.applicationProperty.getHmacKey() == null) {
+        if (this.applicationProperty.getHmacKey() == null) {
             log.warn("ADYEN_HMAC_KEY is UNDEFINED (Webhook cannot be authenticated)");
             //throw new RuntimeException("ADYEN_HMAC_KEY is UNDEFINED");
         }
     }
 
-    /**
-     * Process incoming Webhook notifications
-     * @param notificationRequest
-     * @return
-     */
     @PostMapping("/webhooks/notifications")
-    public ResponseEntity<String> webhooks(@RequestBody NotificationRequest notificationRequest){
+    public ResponseEntity<String> webhooks(@RequestBody NotificationRequest notificationRequest) {
 
         notificationRequest.getNotificationItems().forEach(
-          item -> {
-              // We recommend validate HMAC signature in the webhooks for security reasons
-              try {
-                  if (new HMACValidator().validateHMAC(item, this.applicationProperty.getHmacKey())) {
-                      log.info("Received webhook with event {} : \n" +
-                          "Merchant Reference: {}\n" +
-                          "Alias : {}\n" +
-                          "PSP reference : {}"
-                          , item.getEventCode(), item.getMerchantReference(), item.getAdditionalData().get("alias"), item.getPspReference());
-                  } else {
-                      // invalid HMAC signature: do not send [accepted] response
-                      log.warn("Could not validate HMAC signature for incoming webhook message: {}", item);
-                      throw new RuntimeException("Invalid HMAC signature");
-                  }
-              } catch (SignatureException e) {
-                  log.error("Error while validating HMAC Key", e);
-              }
-          }
+            item -> {
+                // We recommend validate HMAC signature in the webhooks for security reasons
+                try {
+                    if (new HMACValidator().validateHMAC(item, this.applicationProperty.getHmacKey())) {
+                        log.info("Received webhook with event {} : \n" +
+                                "Merchant Reference: {}\n" +
+                                "Alias : {}\n" +
+                                "payment method : {}\n" +
+                                "Successful : {}\n" +
+                                "Reason : {}\n" +
+                                "PSP reference : {}"
+                            , item.getEventCode(), item.getMerchantReference(), item.getAdditionalData().get("alias"),
+                            item.getPaymentMethod(), item.isSuccess(), item.getReason(), item.getPspReference());
+                    } else {
+                        // invalid HMAC signature: do not send [accepted] response
+                        log.warn("Could not validate HMAC signature for incoming webhook message: {}", item);
+                        throw new RuntimeException("Invalid HMAC signature");
+                    }
+                } catch (SignatureException e) {
+                    log.error("Error while validating HMAC Key", e);
+                }
+            }
         );
 
         // Notifying the server we're accepting the payload
