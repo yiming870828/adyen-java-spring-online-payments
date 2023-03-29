@@ -55,13 +55,14 @@ public class CheckoutResource {
         var orderRef = UUID.randomUUID().toString();
         var amount = new Amount()
             .currency("CNY")
-            .value(10L);
+            .value(10000L);
 
         var checkoutSession = new CreateCheckoutSessionRequest();
         checkoutSession.merchantAccount(this.applicationProperty.getMerchantAccount());
         checkoutSession.setChannel(CreateCheckoutSessionRequest.ChannelEnum.WEB);
         checkoutSession.setReference(orderRef);
-        checkoutSession.setAllowedPaymentMethods(Arrays.asList("wechatpayQR","scheme","alipay"));
+        checkoutSession.setAllowedPaymentMethods(Arrays.asList("wechatpayWeb","scheme","alipay"));
+
         checkoutSession.setReturnUrl(request.getScheme() + "://" + host + "/redirect?orderRef=" + orderRef);
         checkoutSession.setAmount(amount);
 
